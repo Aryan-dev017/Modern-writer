@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: oklch(0.14 0.02 265);
+  --foreground: oklch(0.95 0.01 260);
+  --card: oklch(0.2 0.03 265);
+  --card-foreground: oklch(0.96 0.01 260);
+  --muted: oklch(0.3 0.04 265);
+  --muted-foreground: oklch(0.78 0.02 265);
+  --primary: oklch(0.67 0.22 285);
+  --secondary: oklch(0.57 0.15 245);
+  --border: oklch(0.34 0.05 265 / 55%);
+  --ring: oklch(0.72 0.2 285 / 80%);
+  --accent: oklch(0.74 0.17 243);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-accent: var(--accent);
+  --font-sans: "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-serif: "Palatino Linotype", "Book Antiqua", serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 18% 16%, oklch(0.44 0.2 285 / 24%) 0%, transparent 38%),
+    radial-gradient(circle at 85% 12%, oklch(0.5 0.16 240 / 20%) 0%, transparent 40%),
+    radial-gradient(circle at 50% 100%, oklch(0.35 0.16 300 / 15%) 0%, transparent 50%);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+::selection {
+  background: oklch(0.78 0.19 285 / 30%);
+  color: var(--foreground);
+}
+
+.glass-panel {
+  background: linear-gradient(
+    160deg,
+    oklch(0.26 0.04 265 / 62%) 0%,
+    oklch(0.18 0.03 262 / 70%) 100%
+  );
+  backdrop-filter: blur(16px);
+  border: 1px solid oklch(0.52 0.05 265 / 30%);
+  box-shadow:
+    0 24px 64px oklch(0.05 0.01 260 / 56%),
+    inset 0 1px 0 oklch(0.88 0.02 260 / 12%);
+}
+
+.text-glow {
+  text-shadow:
+    0 0 14px oklch(0.72 0.22 285 / 36%),
+    0 0 34px oklch(0.67 0.22 255 / 23%);
+}
+
+.cinematic-grid {
+  background-image:
+    linear-gradient(to right, oklch(0.44 0.04 260 / 9%) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.44 0.04 260 / 9%) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+@keyframes relationship-edge-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -88;
+  }
 }
