@@ -1,7 +1,6 @@
 "use client";
 
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { Plus, Sparkles, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -126,13 +125,13 @@ export function CharacterForm({ mode, initialValue, onSubmit, onDelete }: Charac
 
   return (
     <Card className="glass-panel overflow-hidden">
-      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-violet-400 to-secondary" />
+      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-amber-300 to-secondary" />
       <CardHeader>
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {mode === "create" ? "Character Forge" : "Character Revision"}
+          {mode === "create" ? "Character Codex" : "Character Revision"}
         </p>
         <CardTitle className="font-serif text-2xl text-white">
-          {mode === "create" ? "Craft a New Presence" : "Refine This Presence"}
+          {mode === "create" ? "Write a New Presence" : "Refine This Presence"}
         </CardTitle>
         <CardDescription>{mood.aura}</CardDescription>
       </CardHeader>
@@ -176,7 +175,7 @@ export function CharacterForm({ mode, initialValue, onSubmit, onDelete }: Charac
             </Field>
 
             <Field label="Emotional Tags">
-              <div className="rounded-xl border border-white/15 bg-black/20 p-2">
+              <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-2">
                 <div className="flex gap-2">
                   <input
                     value={tagInput}
@@ -198,7 +197,7 @@ export function CharacterForm({ mode, initialValue, onSubmit, onDelete }: Charac
                   {draft.emotionalTags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 rounded-full border border-violet-300/25 bg-violet-400/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-violet-100"
+                      className="inline-flex items-center gap-1 rounded-full border border-amber-300/25 bg-amber-400/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100"
                     >
                       {tag}
                       <button type="button" onClick={() => removeTag(tag)} aria-label={`Remove ${tag}`}>
@@ -263,7 +262,7 @@ export function CharacterForm({ mode, initialValue, onSubmit, onDelete }: Charac
           </Field>
 
           <Field label="Relationship Indicators">
-            <div className="rounded-xl border border-white/15 bg-black/20 p-3">
+            <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-3">
               <div className="grid gap-2 md:grid-cols-[1.3fr_.8fr_.8fr_auto]">
                 <input
                   value={relationshipName}
@@ -302,11 +301,9 @@ export function CharacterForm({ mode, initialValue, onSubmit, onDelete }: Charac
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {draft.relationships.map((relationship) => (
-                  <motion.div
+                  <div
                     key={relationship.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/90"
+                    className="inline-flex items-center gap-2 rounded-full border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.16))] px-3 py-1 text-xs text-white/90"
                   >
                     <span className="uppercase tracking-[0.12em] text-white/65">
                       {relationship.type}
@@ -320,7 +317,7 @@ export function CharacterForm({ mode, initialValue, onSubmit, onDelete }: Charac
                     >
                       <X className="h-3 w-3" />
                     </button>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -371,5 +368,5 @@ function Field({ label, children }: FieldProps) {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/30";
+  "w-full rounded-xl border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.18))] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/45 focus:border-primary/60 focus:ring-2 focus:ring-primary/20";
 const textareaClass = `${inputClass} min-h-24 resize-y`;

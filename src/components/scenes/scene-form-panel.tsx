@@ -77,17 +77,17 @@ export function SceneFormPanel({
     });
 
   return (
-    <Card className="glass-panel overflow-hidden border-white/20">
-      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-violet-400 to-secondary" />
+    <Card className="glass-panel overflow-hidden border-amber-200/18">
+      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-amber-300 to-secondary" />
       <CardHeader>
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {mode === "create" ? "Scene Forge" : "Scene Revision"}
+          {mode === "create" ? "Scene Pages" : "Scene Revision"}
         </p>
         <CardTitle className="font-serif text-2xl text-white">
-          {mode === "create" ? "Create Cinematic Scene" : "Edit Scene"}
+          {mode === "create" ? "Write a New Scene" : "Edit Scene"}
         </CardTitle>
         <CardDescription>
-          Shape tone, cast, and timeline gravity for each story beat.
+          Shape tone, cast, and timeline gravity for each handwritten story beat.
         </CardDescription>
       </CardHeader>
 
@@ -103,15 +103,15 @@ export function SceneFormPanel({
             />
           </Field>
 
-          <Field label="Summary">
-            <textarea
-              required
-              value={draft.summary}
-              onChange={(event) => updateField("summary", event.target.value)}
+              <Field label="Summary">
+                <textarea
+                  required
+                  value={draft.summary}
+                  onChange={(event) => updateField("summary", event.target.value)}
               placeholder="What emotional and narrative movement happens in this scene?"
-              className={textareaClass}
-            />
-          </Field>
+                  className={textareaClass}
+                />
+              </Field>
 
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Emotional Tone">
@@ -140,7 +140,7 @@ export function SceneFormPanel({
           </div>
 
           <Field label="Involved Characters">
-            <div className="rounded-xl border border-white/15 bg-black/20 p-3">
+              <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-3">
               <div className="flex flex-wrap gap-2">
                 {characters.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
@@ -158,7 +158,7 @@ export function SceneFormPanel({
                           "rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.14em] transition",
                           selected
                             ? "border-primary/50 bg-primary/20 text-white"
-                            : "border-white/20 bg-white/5 text-white/75 hover:border-white/35",
+                            : "border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.14))] text-white/75 hover:border-amber-200/25",
                         )}
                       >
                         {character.name}
@@ -171,7 +171,7 @@ export function SceneFormPanel({
           </Field>
 
           {selectedCharacters.length > 0 ? (
-            <div className="rounded-xl border border-white/15 bg-black/20 p-3">
+            <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-3">
               <p className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/65">
                 <Film className="h-3.5 w-3.5" />
                 Assigned Cast
@@ -180,7 +180,7 @@ export function SceneFormPanel({
                 {selectedCharacters.map((character) => (
                   <span
                     key={`${character.id}-assigned`}
-                    className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-xs text-white/85"
+                    className="rounded-full border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.16))] px-3 py-1 text-xs text-white/85"
                   >
                     {character.name}
                   </span>
@@ -193,7 +193,7 @@ export function SceneFormPanel({
             <textarea
               value={draft.notes}
               onChange={(event) => updateField("notes", event.target.value)}
-              placeholder="Cinematic direction, camera language, pacing cues."
+              placeholder="Direction notes, pacing cues, and storybook margins."
               className={textareaClass}
             />
           </Field>
@@ -217,7 +217,7 @@ export function SceneFormPanel({
               </Button>
             ) : null}
 
-            <div className="ml-auto flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1 text-xs text-white/70">
+            <div className="ml-auto flex items-center gap-2 rounded-full border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.18))] px-3 py-1 text-xs text-white/70">
               <Clapperboard className="h-3.5 w-3.5" />
               {mode === "create" ? "New Timeline Entry" : "Revision Mode"}
             </div>
@@ -243,5 +243,5 @@ function Field({ label, children }: FieldProps) {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/30";
+  "w-full rounded-xl border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.18))] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/45 focus:border-primary/60 focus:ring-2 focus:ring-primary/20";
 const textareaClass = `${inputClass} min-h-24 resize-y`;

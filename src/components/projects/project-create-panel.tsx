@@ -1,7 +1,6 @@
 "use client";
 
 import { type FormEvent, useState } from "react";
-import { motion } from "framer-motion";
 import { Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,12 +33,12 @@ export function ProjectCreatePanel({ onCreate }: ProjectCreatePanelProps) {
   };
 
   return (
-    <Card id="create" className="glass-panel overflow-hidden border-white/20">
-      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-violet-400 to-secondary" />
+    <Card id="create" className="glass-panel overflow-hidden border-amber-200/18">
+      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-amber-300 to-secondary" />
       <CardHeader>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Creation Portal</p>
-        <CardTitle className="font-serif text-2xl text-white">Create New Universe</CardTitle>
-        <CardDescription>Name the next world and set its narrative atmosphere.</CardDescription>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Creation Desk</p>
+        <CardTitle className="font-serif text-2xl text-white">Write a New World</CardTitle>
+        <CardDescription>Name the next journal and give it its first atmosphere.</CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -52,7 +51,7 @@ export function ProjectCreatePanel({ onCreate }: ProjectCreatePanelProps) {
               required
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="e.g. The Hollow Star Covenant"
+              placeholder="e.g. The Willow Moon Chronicle"
               className={inputClass}
             />
           </label>
@@ -70,13 +69,13 @@ export function ProjectCreatePanel({ onCreate }: ProjectCreatePanelProps) {
             </select>
           </label>
 
-          <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.99 }}>
+          <div>
             <Button type="submit" size="lg" className="w-full gap-2">
               <Plus className="h-4 w-4" />
               Forge Universe
               <Sparkles className="h-4 w-4" />
             </Button>
-          </motion.div>
+          </div>
         </form>
       </CardContent>
     </Card>
@@ -84,4 +83,4 @@ export function ProjectCreatePanel({ onCreate }: ProjectCreatePanelProps) {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/30";
+  "w-full rounded-xl border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.18))] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/45 focus:border-primary/60 focus:ring-2 focus:ring-primary/20";

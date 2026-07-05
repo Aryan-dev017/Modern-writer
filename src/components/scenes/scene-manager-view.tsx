@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Reorder, motion } from "framer-motion";
 import { Clapperboard, GripVertical, Sparkles, TimerReset } from "lucide-react";
 import { AnalyticsEvent } from "@/lib/analytics/events";
 import { useAnalytics } from "@/lib/analytics/hooks";
@@ -17,16 +16,39 @@ function sortScenesByTimeline(a: UniverseScene, b: UniverseScene) {
   return a.timelineOrder - b.timelineOrder;
 }
 
+function moveSceneBefore(
+  scenes: UniverseScene[],
+  draggedSceneId: string,
+  targetSceneId: string,
+) {
+  const orderedIds = scenes.map((scene) => scene.id);
+  const fromIndex = orderedIds.indexOf(draggedSceneId);
+  const toIndex = orderedIds.indexOf(targetSceneId);
+
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+    return orderedIds;
+  }
+
+  const nextIds = [...orderedIds];
+  const [movedId] = nextIds.splice(fromIndex, 1);
+  nextIds.splice(toIndex, 0, movedId);
+  return nextIds;
+}
+
 export function SceneManagerView() {
   const analytics = useAnalytics();
   const characters = useCharacterStore((state) => state.characters);
   const scenes = useSceneStore((state) => state.scenes);
+  const isLoading = useSceneStore((state) => state.isLoading);
+  const error = useSceneStore((state) => state.error);
   const createScene = useSceneStore((state) => state.createScene);
   const updateScene = useSceneStore((state) => state.updateScene);
   const deleteScene = useSceneStore((state) => state.deleteScene);
   const reorderScenes = useSceneStore((state) => state.reorderScenes);
 
   const [editingSceneId, setEditingSceneId] = useState<string | null>(null);
+  const [draggedSceneId, setDraggedSceneId] = useState<string | null>(null);
+  const [hoveredSceneId, setHoveredSceneId] = useState<string | null>(null);
 
   const timelineScenes = useMemo(() => [...scenes].sort(sortScenesByTimeline), [scenes]);
   const editingScene = useMemo(
@@ -72,28 +94,43 @@ export function SceneManagerView() {
     setEditingSceneId(null);
   };
 
+  const handleDrop = (targetSceneId: string) => {
+    if (!draggedSceneId || draggedSceneId === targetSceneId) {
+      setDraggedSceneId(null);
+      setHoveredSceneId(null);
+      return;
+    }
+
+    const orderedIds = moveSceneBefore(timelineScenes, draggedSceneId, targetSceneId);
+    reorderScenes(orderedIds);
+    setDraggedSceneId(null);
+    setHoveredSceneId(null);
+  };
+
   return (
     <div className="relative mx-auto w-full max-w-7xl space-y-6">
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-panel relative overflow-hidden rounded-2xl border-white/20 p-6"
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,oklch(0.7_0.22_290/.14)_0%,transparent_38%),radial-gradient(circle_at_80%_74%,oklch(0.66_0.2_245/.14)_0%,transparent_38%)]" />
+      <section className="glass-panel relative overflow-hidden rounded-2xl p-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,oklch(0.82_0.12_82/.12)_0%,transparent_38%),radial-gradient(circle_at_80%_74%,oklch(0.52_0.08_150/.12)_0%,transparent_38%)]" />
         <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div className="max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Scene Management</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Scene Scriptbook</p>
             <h2 className="mt-1 font-serif text-4xl text-white md:text-5xl">
-              Build your cinematic timeline.
+              Arrange the pages of your story.
             </h2>
             <p className="mt-3 text-sm text-muted-foreground md:text-base">
-              Arrange scenes like emotional film strips. Every card is a story beat you can reshape,
-              reorder, and cast in real time.
+              Create scenes, edit them in place, and reorder the timeline as if you were moving paper
+              chapters across an old writing desk.
             </p>
           </div>
-          <Badge glow>{timelineScenes.length} scene beats</Badge>
+          <Badge glow>{timelineScenes.length} scene pages</Badge>
         </div>
-      </motion.section>
+      </section>
+
+      {error ? (
+        <Card className="border-rose-300/25 bg-rose-500/10">
+          <CardContent className="p-4 text-sm text-rose-100">{error}</CardContent>
+        </Card>
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.04fr_1.5fr]">
         <SceneFormPanel
@@ -121,18 +158,32 @@ export function SceneManagerView() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Timeline Ordering</p>
-              <h3 className="mt-1 font-serif text-2xl text-white">Drag to Reorder Scenes</h3>
+              <h3 className="mt-1 font-serif text-2xl text-white">Drag pages to reshuffle the manuscript</h3>
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-1 text-xs text-white/70">
+            <div className="flex items-center gap-2 rounded-full border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.18))] px-3 py-1 text-xs text-white/70">
               <TimerReset className="h-3.5 w-3.5" />
               Smooth drag interactions enabled
             </div>
           </div>
 
-          {timelineScenes.length === 0 ? (
-            <Card className="glass-panel border-white/20">
+          {isLoading && timelineScenes.length === 0 ? (
+            <Card className="glass-panel border-amber-200/18">
               <CardContent className="flex min-h-72 flex-col items-center justify-center gap-4 p-8 text-center">
-                <div className="rounded-full border border-white/20 bg-white/8 p-3">
+                <div className="rounded-full border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.16))] p-3">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-serif text-2xl text-white">Loading scene archive</p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    We are pulling your timeline from Supabase so the manuscript reflects real user data.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : timelineScenes.length === 0 ? (
+            <Card className="glass-panel border-amber-200/18">
+              <CardContent className="flex min-h-72 flex-col items-center justify-center gap-4 p-8 text-center">
+                <div className="rounded-full border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.16))] p-3">
                   <Sparkles className="h-5 w-5 text-primary" />
                 </div>
                 <div>
@@ -144,51 +195,72 @@ export function SceneManagerView() {
               </CardContent>
             </Card>
           ) : (
-            <Reorder.Group
-              axis="y"
-              values={timelineScenes}
-              onReorder={(newOrder) => reorderScenes(newOrder.map((scene) => scene.id))}
-              className="space-y-3"
-            >
+            <div className="space-y-3">
               {timelineScenes.map((scene, index) => {
                 const assignedCharacters = scene.involvedCharacterIds
                   .map((id) => characterMap.get(id))
                   .filter((character): character is UniverseCharacter => Boolean(character));
+                const isDragged = draggedSceneId === scene.id;
+                const isDropTarget = hoveredSceneId === scene.id;
 
                 return (
-                  <Reorder.Item
+                  <div
                     key={scene.id}
-                    value={scene}
-                    whileDrag={{ scale: 1.015, rotate: 0.35 }}
+                    draggable
+                    onDragStart={() => setDraggedSceneId(scene.id)}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      if (draggedSceneId && draggedSceneId !== scene.id) {
+                        setHoveredSceneId(scene.id);
+                      }
+                    }}
+                    onDragLeave={() => {
+                      if (hoveredSceneId === scene.id) {
+                        setHoveredSceneId(null);
+                      }
+                    }}
+                    onDrop={() => handleDrop(scene.id)}
+                    onDragEnd={() => {
+                      setDraggedSceneId(null);
+                      setHoveredSceneId(null);
+                    }}
                     className="relative cursor-grab active:cursor-grabbing"
                   >
                     <div className="mb-2 flex items-center gap-2 text-xs text-white/60">
                       <GripVertical className="h-3.5 w-3.5" />
                       Drag to reposition in timeline
                     </div>
-                    <SceneCard
-                      scene={scene}
-                      timelineNumber={index + 1}
-                      assignedCharacters={assignedCharacters}
-                      onEdit={() => setEditingSceneId(scene.id)}
-                      onDelete={() => {
-                        const shouldDelete = window.confirm(`Delete "${scene.title}" from timeline?`);
-                        if (!shouldDelete) {
-                          return;
-                        }
-                        deleteScene(scene.id);
-                        if (editingSceneId === scene.id) {
-                          setEditingSceneId(null);
-                        }
-                      }}
-                    />
-                  </Reorder.Item>
+                    <div
+                      className={[
+                        "rounded-2xl transition duration-300",
+                        isDragged ? "opacity-60 scale-[0.99]" : "",
+                        isDropTarget ? "ring-2 ring-primary/40" : "",
+                      ].join(" ")}
+                    >
+                      <SceneCard
+                        scene={scene}
+                        timelineNumber={index + 1}
+                        assignedCharacters={assignedCharacters}
+                        onEdit={() => setEditingSceneId(scene.id)}
+                        onDelete={() => {
+                          const shouldDelete = window.confirm(`Delete "${scene.title}" from timeline?`);
+                          if (!shouldDelete) {
+                            return;
+                          }
+                          deleteScene(scene.id);
+                          if (editingSceneId === scene.id) {
+                            setEditingSceneId(null);
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
                 );
               })}
-            </Reorder.Group>
+            </div>
           )}
 
-          <div className="rounded-xl border border-white/15 bg-black/25 p-3 text-xs text-muted-foreground">
+          <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-3 text-xs text-muted-foreground">
             <p className="flex items-center gap-2 uppercase tracking-[0.14em] text-white/70">
               <Clapperboard className="h-3.5 w-3.5" />
               Timeline Rule

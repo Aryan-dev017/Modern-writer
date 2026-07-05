@@ -1,39 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowRight, Clapperboard, Orbit, Sparkles } from "lucide-react";
-import { WorldCard } from "@/components/cards/world-card";
+import { ArrowRight, BookOpenText, Clapperboard, HeartHandshake, Sparkles, UserRound } from "lucide-react";
 import { AmbientGlow } from "@/components/visuals/ambient-glow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const worlds = [
+const notebookSections = [
   {
-    name: "Umbra Crown",
-    realm: "Sky Kingdom",
-    description:
-      "A floating metropolis of shattered mirrors where rulers trade memories instead of coin.",
+    href: "/dashboard",
+    icon: BookOpenText,
+    title: "Open Your Journal",
+    description: "Step into the archive where every project feels like a page turned by candlelight.",
   },
   {
-    name: "The Violet Deep",
-    realm: "Abyssal Archive",
-    description:
-      "An ocean trench of luminous ruins where ancient dialogue echoes from coral vaults.",
+    href: "/dashboard/characters",
+    icon: UserRound,
+    title: "Character Codex",
+    description: "Collect collectible character pages, emotional tags, and handwritten notes.",
   },
   {
-    name: "Ashen Meridian",
-    realm: "Frontier Expanse",
-    description:
-      "A black-sand desert crossed by titan bones and pilgrim caravans hunting fate scripts.",
+    href: "/dashboard/scenes",
+    icon: Clapperboard,
+    title: "Scene Pages",
+    description: "Arrange scenes like chapters in a manuscript and reorder the emotional rhythm.",
   },
-];
+  {
+    href: "/dashboard/relationships",
+    icon: HeartHandshake,
+    title: "Relationship Map",
+    description: "Trace living bonds across an enchanted board of glowing ink connections.",
+  },
+] as const;
 
 const storyPillars = [
-  "Character arcs mapped as visual constellations.",
-  "Mood-first scene sequencing with cinematic pacing.",
-  "Universe memory where lore, scenes, and worlds stay interconnected.",
+  "Warm parchment surfaces and wood-toned panels.",
+  "Collectible cards with emotional mood styling.",
+  "Supabase-backed data so your notebook stays in sync everywhere.",
 ];
 
 export function LandingView() {
@@ -41,109 +45,124 @@ export function LandingView() {
     <main className="relative min-h-screen overflow-hidden pb-20">
       <AmbientGlow intensity="bold" />
 
-      <section className="relative mx-auto max-w-6xl px-6 pt-20 md:pt-28">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="max-w-3xl"
-        >
-          <Badge glow className="mb-6">
-            Cinematic Story Engine
-          </Badge>
+      <section className="relative mx-auto max-w-7xl px-6 pt-20 md:pt-28">
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
+          <Card className="glass-panel overflow-hidden border-amber-200/16 p-0">
+            <div className="h-1.5 w-full bg-gradient-to-r from-primary via-amber-300 to-secondary" />
+            <div className="p-8 md:p-10">
+              <Badge glow className="mb-6">
+                Enchanted Storybook
+              </Badge>
 
-          <h1 className="font-serif text-5xl leading-tight text-white sm:text-6xl md:text-7xl">
-            Build a universe that feels like a living myth.
-          </h1>
+              <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">
+                Welcome, Storyteller.
+              </p>
 
-          <p className="mt-6 text-lg leading-relaxed text-muted-foreground md:text-xl">
-            Aether & Abyss blends emotional worldbuilding with premium cinematic tooling so every arc,
-            scene, and character beat lands with atmosphere.
-          </p>
+              <h1 className="mt-4 font-serif text-5xl leading-tight text-white sm:text-6xl md:text-7xl">
+                Every world you imagine lives here.
+              </h1>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link href="/dashboard">
-              <Button size="lg" className="gap-2">
-                Enter the Dashboard
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Button variant="outline" size="lg">
-              Watch Universe Intro
-            </Button>
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+                Open an enchanted journal, preserve your worlds like treasured manuscript pages,
+                and keep every character, scene, and bond alive in one warm archive.
+              </p>
+
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Link href="/dashboard">
+                  <Button size="lg" className="gap-2">
+                    Open Your Journal
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button variant="outline" size="lg">
+                    Begin A New Chronicle
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+          {notebookSections.map((section) => {
+            const Icon = section.icon;
+
+            return (
+              <Link key={section.href} href={section.href} className="group block">
+                <Card className="glass-panel h-full border-amber-200/15 transition duration-300 group-hover:-translate-y-1 group-hover:border-primary/35">
+                  <CardHeader>
+                    <div className="inline-flex rounded-full border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.16))] p-3 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <CardTitle className="font-serif text-2xl text-white">{section.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm leading-6 text-muted-foreground">
+                    {section.description}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
           </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.12, ease: "easeOut" }}
-          className="mt-10 grid gap-4 md:grid-cols-3"
-        >
-          <Card className="glass-panel">
-            <CardHeader>
-              <Orbit className="h-5 w-5 text-primary" />
-              <CardTitle className="font-serif text-white">Connected Narratives</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Plot, lore, and timeline fragments stay synchronized as one storytelling organism.
-            </CardContent>
-          </Card>
-          <Card className="glass-panel">
-            <CardHeader>
-              <Clapperboard className="h-5 w-5 text-primary" />
-              <CardTitle className="font-serif text-white">Filmic Presentation</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Interface language inspired by sci-fi control rooms and fantasy codices.
-            </CardContent>
-          </Card>
-          <Card className="glass-panel">
-            <CardHeader>
-              <Sparkles className="h-5 w-5 text-primary" />
-              <CardTitle className="font-serif text-white">Emotional Pacing</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Build tension and release through visual flow, not spreadsheet-style complexity.
-            </CardContent>
-          </Card>
-        </motion.div>
-      </section>
-
-      <section className="relative mx-auto mt-20 max-w-6xl px-6">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Story Realms</p>
-            <h2 className="mt-2 font-serif text-3xl text-white md:text-4xl">Worlds Worth Exploring</h2>
-          </div>
-        </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {worlds.map((world) => (
-            <WorldCard key={world.name} {...world} />
-          ))}
         </div>
       </section>
 
-      <section className="relative mx-auto mt-20 max-w-6xl px-6">
-        <Card className="glass-panel overflow-hidden">
+      <section className="relative mx-auto mt-20 max-w-7xl px-6">
+        <Card className="glass-panel overflow-hidden border-amber-200/16">
           <CardHeader>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Design Philosophy</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">What this feels like</p>
             <CardTitle className="font-serif text-3xl text-white">
-              Crafted for narrative gravity, not corporate clutter.
+              A rainy evening, a wooden desk, and a notebook that remembers everything.
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 pb-8 md:grid-cols-3">
             {storyPillars.map((pillar) => (
-              <motion.div
+              <div
                 key={pillar}
-                whileHover={{ y: -4 }}
-                className="rounded-xl border border-border/80 bg-black/20 p-4 text-sm text-muted-foreground"
+                className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-4 text-sm leading-6 text-muted-foreground"
               >
                 {pillar}
-              </motion.div>
+              </div>
             ))}
           </CardContent>
         </Card>
+      </section>
+
+      <section className="relative mx-auto mt-20 max-w-7xl px-6">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+          <Card className="glass-panel border-amber-200/16">
+            <CardHeader>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">A living archive</p>
+              <CardTitle className="font-serif text-3xl text-white">
+                Projects, characters, scenes, and bonds all stay synced to Supabase.
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm leading-6 text-muted-foreground">
+              The app stores real user data, keeps sessions fresh, and lets you move between the
+              archive, character pages, scene pages, and relationship boards without losing the story.
+            </CardContent>
+          </Card>
+
+          <Card className="glass-panel border-amber-200/16">
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Start here</p>
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <CardTitle className="font-serif text-2xl text-white">Enter the archive in seconds</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Link href="/login">
+                <Button className="w-full">Sign In</Button>
+              </Link>
+              <Link href="/signup">
+                <Button variant="outline" className="w-full">
+                  Create Account
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </section>
     </main>
   );

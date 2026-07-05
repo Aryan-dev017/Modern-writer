@@ -1,17 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { AlertTriangle, LoaderCircle, MailCheck, Sparkles } from "lucide-react";
 import { clearOAuthIntent } from "@/lib/analytics/client";
 import { AnalyticsEvent } from "@/lib/analytics/events";
 import { useAnalytics } from "@/lib/analytics/hooks";
 import { markOnboardingStepCompleted } from "@/lib/analytics/onboarding";
+import { signInWithEmail, signInWithGoogle, signUpWithEmail } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/client";
 import { normalizeNextPath } from "@/lib/auth/navigation";
 
 type AuthMode = "login" | "signup";
@@ -34,27 +33,10 @@ export function AuthForm({ mode, nextPath, initialError }: AuthFormProps) {
   const [errorMessage, setErrorMessage] = useState(initialError ?? "");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const supabase = useMemo(() => {
-    try {
-      return createClient();
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const redirectTo = typeof window === "undefined"
-    ? ""
-    : `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`;
-
   const submitEmailPassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
-
-    if (!supabase) {
-      setErrorMessage("Supabase is not configured. Add environment variables and try again.");
-      return;
-    }
 
     if (mode === "signup" && password !== confirmPassword) {
       setErrorMessage("Password confirmation does not match.");
@@ -69,13 +51,10 @@ export function AuthForm({ mode, nextPath, initialError }: AuthFormProps) {
     setLoading(true);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
+        const { error } = await signInWithEmail(email, password);
 
         if (error) {
-          setErrorMessage(error.message);
+          setErrorMessage(error);
           return;
         }
 
@@ -87,16 +66,10 @@ export function AuthForm({ mode, nextPath, initialError }: AuthFormProps) {
         return;
       }
 
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          emailRedirectTo: redirectTo || undefined,
-        },
-      });
+      const { error } = await signUpWithEmail(email, password, { nextPath: destination });
 
       if (error) {
-        setErrorMessage(error.message);
+        setErrorMessage(error);
         return;
       }
 
@@ -116,24 +89,14 @@ export function AuthForm({ mode, nextPath, initialError }: AuthFormProps) {
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!supabase) {
-      setErrorMessage("Supabase is not configured. Add environment variables and try again.");
-      return;
-    }
-
     setGoogleLoading(true);
     try {
       analytics.setOAuthIntent(mode);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo,
-        },
-      });
+      const { error } = await signInWithGoogle({ nextPath: destination });
 
       if (error) {
         clearOAuthIntent();
-        setErrorMessage(error.message);
+        setErrorMessage(error);
       }
     } finally {
       setGoogleLoading(false);
@@ -147,40 +110,38 @@ export function AuthForm({ mode, nextPath, initialError }: AuthFormProps) {
 
   return (
     <Card className="glass-panel w-full max-w-xl overflow-hidden">
-      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-violet-400 to-secondary" />
+      <div className="h-1.5 w-full bg-gradient-to-r from-primary via-amber-300 to-secondary" />
       <CardHeader>
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {isLoginMode ? "Portal Access" : "Universe Enrollment"}
+          {isLoginMode ? "Portal Access" : "Journal Enrollment"}
         </p>
         <CardTitle className="font-serif text-3xl text-white">
-          {isLoginMode ? "Enter the Story Chamber" : "Create Your Chronicle ID"}
+          {isLoginMode ? "Enter the Reading Room" : "Create Your Chronicle ID"}
         </CardTitle>
         <CardDescription>
           {isLoginMode
-            ? "Resume your cinematic universe with secure session continuity."
+            ? "Resume your archive with secure session continuity."
             : "Register your identity to shape worlds, arcs, and emotional constellations."}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <motion.button
+        <button
           type="button"
-          whileHover={{ y: -1 }}
-          whileTap={{ scale: 0.99 }}
           disabled={googleLoading || loading}
           onClick={submitGoogleAuth}
-          className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.16))] px-4 py-3 text-sm text-white transition hover:bg-amber-950/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <span className="flex items-center justify-center gap-2">
             {googleLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             Continue with Google
           </span>
-        </motion.button>
+        </button>
 
         <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-white/15" />
+          <div className="h-px flex-1 bg-amber-200/15" />
           <span className="text-xs uppercase tracking-[0.14em] text-white/60">or</span>
-          <div className="h-px flex-1 bg-white/15" />
+          <div className="h-px flex-1 bg-amber-200/15" />
         </div>
 
         <form onSubmit={submitEmailPassword} className="space-y-3">
@@ -252,7 +213,7 @@ export function AuthForm({ mode, nextPath, initialError }: AuthFormProps) {
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          {isLoginMode ? "New to the universe?" : "Already have access?"}{" "}
+          {isLoginMode ? "New to the archive?" : "Already have access?"}{" "}
           <Link href={alternateHref} className="text-primary underline-offset-4 transition hover:underline">
             {isLoginMode ? "Create account" : "Sign in"}
           </Link>
@@ -263,4 +224,4 @@ export function AuthForm({ mode, nextPath, initialError }: AuthFormProps) {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/30";
+  "w-full rounded-xl border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.18))] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/45 focus:border-primary/60 focus:ring-2 focus:ring-primary/20";

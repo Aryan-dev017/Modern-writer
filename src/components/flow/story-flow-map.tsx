@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { motion } from "framer-motion";
 import ReactFlow, {
   Background,
   Controls,
@@ -66,12 +65,12 @@ export function StoryFlowMap() {
           style: {
             padding: "10px 14px",
             borderRadius: "14px",
-            border: `1px solid ${isActive ? "oklch(0.67 0.22 285 / 0.75)" : "oklch(0.34 0.05 265 / 0.5)"}`,
+            border: `1px solid ${isActive ? "oklch(0.83 0.13 82 / 0.75)" : "oklch(0.34 0.05 78 / 0.5)"}`,
             background: isActive
-              ? "linear-gradient(145deg, oklch(0.34 0.08 280 / 0.9), oklch(0.2 0.04 265 / 0.9))"
-              : "linear-gradient(145deg, oklch(0.24 0.04 265 / 0.88), oklch(0.17 0.03 260 / 0.9))",
-            color: "oklch(0.95 0.01 260)",
-            boxShadow: isActive ? "0 0 32px oklch(0.67 0.22 285 / 0.25)" : "none",
+              ? "linear-gradient(145deg, oklch(0.3 0.05 78 / 0.94), oklch(0.22 0.04 72 / 0.94))"
+              : "linear-gradient(145deg, oklch(0.24 0.04 76 / 0.88), oklch(0.18 0.03 74 / 0.92))",
+            color: "oklch(0.98 0.02 92)",
+            boxShadow: isActive ? "0 0 32px oklch(0.83 0.13 82 / 0.22)" : "none",
             fontSize: "13px",
             letterSpacing: "0.01em",
             width: 210,
@@ -82,10 +81,7 @@ export function StoryFlowMap() {
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, ease: "easeOut" }}
+      <div
       className="glass-panel h-[26rem] overflow-hidden rounded-2xl"
     >
       <ReactFlowProvider>
@@ -97,15 +93,15 @@ export function StoryFlowMap() {
           defaultEdgeOptions={{
             type: "smoothstep",
             style: {
-              stroke: "oklch(0.66 0.14 245 / 0.82)",
+              stroke: "oklch(0.68 0.1 82 / 0.82)",
               strokeWidth: 2,
             },
           }}
           className="cinematic-grid"
         >
           <MiniMap
-            nodeColor={() => "oklch(0.66 0.16 280 / 0.82)"}
-            maskColor="oklch(0.12 0.02 260 / 0.75)"
+            nodeColor={() => "oklch(0.7 0.12 82 / 0.82)"}
+            maskColor="oklch(0.12 0.03 78 / 0.75)"
             pannable
             zoomable
           />
@@ -113,9 +109,9 @@ export function StoryFlowMap() {
             position="bottom-right"
             className="[&>button]:border-border [&>button]:bg-black/40 [&>button]:text-white"
           />
-          <Background color="oklch(0.46 0.04 265 / 0.2)" gap={24} />
+          <Background color="oklch(0.56 0.04 78 / 0.2)" gap={24} />
         </ReactFlow>
       </ReactFlowProvider>
-    </motion.div>
+    </div>
   );
 }

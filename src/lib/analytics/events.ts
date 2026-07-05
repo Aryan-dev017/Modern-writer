@@ -29,7 +29,8 @@ export type RelationshipTypeTracked =
   | "lover"
   | "rival"
   | "mentor"
-  | "sibling";
+  | "sibling"
+  | "stranger";
 
 export type AnalyticsEventPayloadMap = {
   [AnalyticsEvent.PAGE_VIEWED]: {

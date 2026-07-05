@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { type ComponentType, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { ArrowLeft, Crown, HeartCrack, LockKeyhole, Target } from "lucide-react";
 import { CharacterAvatar } from "@/components/characters/character-avatar";
 import { CharacterForm } from "@/components/characters/character-form";
@@ -31,7 +30,7 @@ export function CharacterDetailView({ characterId }: CharacterDetailViewProps) {
   if (!character) {
     return (
       <div className="mx-auto max-w-4xl">
-        <Card className="glass-panel">
+        <Card className="glass-panel border-amber-200/18">
           <CardContent className="p-8 text-center">
             <p className="text-sm text-muted-foreground">
               That character could not be found. It may have been deleted.
@@ -57,8 +56,8 @@ export function CharacterDetailView({ characterId }: CharacterDetailViewProps) {
       </div>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1.3fr]">
-        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-          <Card className={`glass-panel border-white/20 ${mood.border}`}>
+        <div className="space-y-4">
+          <Card className={`glass-panel border-amber-200/18 ${mood.border}`}>
             <CardHeader>
               <div className="flex items-start justify-between gap-3">
                 <CharacterAvatar
@@ -82,7 +81,7 @@ export function CharacterDetailView({ characterId }: CharacterDetailViewProps) {
             </CardContent>
           </Card>
 
-          <Card className="glass-panel">
+          <Card className="glass-panel border-amber-200/18">
             <CardHeader>
               <CardTitle className="font-serif text-2xl text-white">Relationship Indicators</CardTitle>
             </CardHeader>
@@ -96,9 +95,9 @@ export function CharacterDetailView({ characterId }: CharacterDetailViewProps) {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
-        <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
+        <div>
           <CharacterForm
             mode="edit"
             initialValue={{
@@ -127,7 +126,7 @@ export function CharacterDetailView({ characterId }: CharacterDetailViewProps) {
               router.push("/dashboard/characters");
             }}
           />
-        </motion.div>
+        </div>
       </section>
     </div>
   );
@@ -141,7 +140,7 @@ type InfoBlockProps = {
 
 function InfoBlock({ icon: Icon, label, content }: InfoBlockProps) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+    <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-3">
       <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-white/65">
         <Icon className="h-3.5 w-3.5" />
         {label}

@@ -49,14 +49,13 @@ function RelationshipGlowEdge(props: EdgeProps<RelationshipEdgeData>) {
           stroke: style.stroke,
           strokeWidth: 2.4,
           strokeDasharray: "14 8",
-          animation: "relationship-edge-flow 5s linear infinite",
         }}
       />
 
       <EdgeLabelRenderer>
         <div
           className={cn(
-            "nodrag nopan pointer-events-none absolute rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] backdrop-blur-xl",
+            "nodrag nopan pointer-events-none absolute rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em]",
             style.chip,
           )}
           style={{

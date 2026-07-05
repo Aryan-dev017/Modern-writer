@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Background,
   ConnectionMode,
@@ -31,7 +30,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { relationshipKinds, relationshipStyles, type RelationshipKind } from "@/lib/relationships/config";
-import { useCharacterStore, type UniverseCharacter } from "@/store/character-store";
+import {
+  useCharacterStore,
+  type CharacterRelationship,
+  type UniverseCharacter,
+} from "@/store/character-store";
+import { useRelationshipStore, type UniverseRelationship } from "@/store/relationship-store";
 
 const nodeTypes = {
   characterNode: CharacterRelationshipNode,
@@ -41,15 +45,27 @@ const edgeTypes = {
   relationshipEdge: RelationshipGlowEdge,
 };
 
-const mapLegacyKind: Record<string, RelationshipKind> = {
-  ally: "friend",
-  rival: "rival",
-  mentor: "mentor",
-  kin: "sibling",
-  muse: "lover",
-};
+function mapLegacyRelationshipKind(kind: CharacterRelationship["type"]): RelationshipKind {
+  switch (kind) {
+    case "ally":
+      return "friend";
+    case "rival":
+      return "rival";
+    case "mentor":
+      return "mentor";
+    case "kin":
+      return "sibling";
+    case "muse":
+    default:
+      return "lover";
+  }
+}
 
-function createNodeFromCharacter(character: UniverseCharacter, index: number, total: number): Node<RelationshipNodeData> {
+function createNodeFromCharacter(
+  character: UniverseCharacter,
+  index: number,
+  total: number,
+): Node<RelationshipNodeData> {
   const angle = (index / Math.max(1, total)) * Math.PI * 2;
   const radius = 280 + (index % 2) * 90;
   const centerX = 420;
@@ -70,7 +86,11 @@ function createNodeFromCharacter(character: UniverseCharacter, index: number, to
   };
 }
 
-function createRelationshipEdge(source: string, target: string, kind: RelationshipKind): Edge<RelationshipEdgeData> {
+function createRelationshipEdge(
+  source: string,
+  target: string,
+  kind: RelationshipKind,
+): Edge<RelationshipEdgeData> {
   const style = relationshipStyles[kind];
 
   return {
@@ -88,87 +108,147 @@ function createRelationshipEdge(source: string, target: string, kind: Relationsh
   };
 }
 
-function seedEdges(characters: UniverseCharacter[]): Edge<RelationshipEdgeData>[] {
+function pairKey(source: string, target: string, kind: RelationshipKind) {
+  return [source, target].sort().join("::") + `::${kind}`;
+}
+
+function createFallbackEdges(characters: UniverseCharacter[]) {
   const byName = new Map(characters.map((character) => [character.name.toLowerCase(), character.id]));
   const seenPairs = new Set<string>();
-  const seeded: Edge<RelationshipEdgeData>[] = [];
+  const edges: Edge<RelationshipEdgeData>[] = [];
 
   characters.forEach((character) => {
     character.relationships.forEach((relationship) => {
-      const targetId = byName.get(relationship.name.toLowerCase());
+      const targetId = relationship.targetCharacterId ?? byName.get(relationship.name.toLowerCase());
       if (!targetId || targetId === character.id) {
         return;
       }
 
-      const kind = mapLegacyKind[relationship.type] ?? "friend";
-      const pairKey = [character.id, targetId].sort().join("::") + `::${kind}`;
-      if (seenPairs.has(pairKey)) {
+      const kind = mapLegacyRelationshipKind(relationship.type);
+      const key = pairKey(character.id, targetId, kind);
+      if (seenPairs.has(key)) {
         return;
       }
 
-      seenPairs.add(pairKey);
-      seeded.push(createRelationshipEdge(character.id, targetId, kind));
+      seenPairs.add(key);
+      edges.push(createRelationshipEdge(character.id, targetId, kind));
     });
   });
 
-  return seeded;
+  return edges;
 }
 
-function existsSimilarEdge(
-  edges: Edge<RelationshipEdgeData>[],
-  source: string,
-  target: string,
-  kind: RelationshipKind,
-) {
-  return edges.some((edge) => {
-    const sameDirection = edge.source === source && edge.target === target;
-    const reverseDirection = edge.source === target && edge.target === source;
-    return (sameDirection || reverseDirection) && edge.data?.kind === kind;
+function createEdgesFromRelationships(relationships: UniverseRelationship[]) {
+  const seenPairs = new Set<string>();
+  const edges: Edge<RelationshipEdgeData>[] = [];
+
+  relationships.forEach((relationship) => {
+    const key = pairKey(
+      relationship.sourceCharacterId,
+      relationship.targetCharacterId,
+      relationship.relationshipKind,
+    );
+
+    if (seenPairs.has(key)) {
+      return;
+    }
+
+    seenPairs.add(key);
+    edges.push(
+      createRelationshipEdge(
+        relationship.sourceCharacterId,
+        relationship.targetCharacterId,
+        relationship.relationshipKind,
+      ),
+    );
   });
+
+  return edges;
 }
 
 export function RelationshipGraphView() {
   const analytics = useAnalytics();
   const characters = useCharacterStore((state) => state.characters);
+  const isCharacterLoading = useCharacterStore((state) => state.isLoading);
+  const relationships = useRelationshipStore((state) => state.relationships);
+  const isRelationshipLoading = useRelationshipStore((state) => state.isLoading);
+  const error = useRelationshipStore((state) => state.error);
+  const createRelationship = useRelationshipStore((state) => state.createRelationship);
 
-  const initialNodes = useMemo(
-    () =>
-      characters.map((character, index) =>
-        createNodeFromCharacter(character, index, characters.length),
-      ),
-    [characters],
-  );
-
-  const initialEdges = useMemo(() => seedEdges(characters), [characters]);
-
-  const [nodes, , onNodesChange] = useNodesState<RelationshipNodeData>(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<RelationshipEdgeData>(initialEdges);
-  const edgesRef = useRef(edges);
+  const [nodes, setNodes, onNodesChange] = useNodesState<RelationshipNodeData>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<RelationshipEdgeData>([]);
   const [activeKind, setActiveKind] = useState<RelationshipKind>("friend");
-  const [sourceId, setSourceId] = useState(initialNodes[0]?.id ?? "");
-  const [targetId, setTargetId] = useState(initialNodes[1]?.id ?? initialNodes[0]?.id ?? "");
+  const [sourceId, setSourceId] = useState("");
+  const [targetId, setTargetId] = useState("");
 
   useEffect(() => {
-    edgesRef.current = edges;
-  }, [edges]);
+    setNodes((current) => {
+      const currentById = new Map(current.map((node) => [node.id, node] as const));
+      return characters.map((character, index) => {
+        const existing = currentById.get(character.id);
+        if (existing) {
+          return {
+            ...existing,
+            data: {
+              name: character.name,
+              title: character.title,
+              emotionalTone: character.emotionalTone,
+            },
+          };
+        }
 
-  const appendRelationship = useCallback(
+        return createNodeFromCharacter(character, index, characters.length);
+      });
+    });
+  }, [characters, setNodes]);
+
+  const derivedEdges = useMemo(() => {
+    if (relationships.length > 0) {
+      return createEdgesFromRelationships(relationships);
+    }
+
+    return createFallbackEdges(characters);
+  }, [characters, relationships]);
+
+  useEffect(() => {
+    setEdges(derivedEdges);
+  }, [derivedEdges, setEdges]);
+
+  const resolvedSourceId =
+    sourceId && nodes.some((node) => node.id === sourceId) ? sourceId : nodes[0]?.id ?? "";
+  const resolvedTargetId =
+    targetId &&
+    nodes.some((node) => node.id === targetId) &&
+    targetId !== resolvedSourceId
+      ? targetId
+      : nodes[1]?.id ?? resolvedSourceId;
+
+  const createBond = useCallback(
     (source: string, target: string, kind: RelationshipKind) => {
       if (!source || !target || source === target) {
         return false;
       }
 
-      const currentEdges = edgesRef.current;
-      if (existsSimilarEdge(currentEdges, source, target, kind)) {
+      const relationshipId = createRelationship({
+        sourceCharacterId: source,
+        targetCharacterId: target,
+        relationshipKind: kind,
+      });
+
+      if (!relationshipId) {
         return false;
       }
 
-      const nextEdges = [...currentEdges, createRelationshipEdge(source, target, kind)];
-      edgesRef.current = nextEdges;
-      setEdges(nextEdges);
+      analytics.track(AnalyticsEvent.RELATIONSHIP_CREATED, {
+        source_character_id: source,
+        target_character_id: target,
+        relationship_type: kind,
+      });
+      markOnboardingStepCompleted("relationship_created");
+
       return true;
     },
-    [setEdges],
+    [analytics, createRelationship],
   );
 
   const onConnect = useCallback(
@@ -177,153 +257,147 @@ export function RelationshipGraphView() {
         return;
       }
 
-      const wasCreated = appendRelationship(connection.source, connection.target, activeKind);
-      if (!wasCreated) {
-        return;
-      }
-
-      analytics.track(AnalyticsEvent.RELATIONSHIP_CREATED, {
-        source_character_id: connection.source,
-        target_character_id: connection.target,
-        relationship_type: activeKind,
-      });
-      markOnboardingStepCompleted("relationship_created");
+      createBond(connection.source, connection.target, activeKind);
     },
-    [appendRelationship, activeKind, analytics],
+    [activeKind, createBond],
   );
+
+  const hasCharacters = characters.length > 0;
+  const isLoading = isCharacterLoading || isRelationshipLoading;
 
   return (
     <div className="relative mx-auto w-full max-w-7xl space-y-6">
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
-        className="glass-panel relative overflow-hidden rounded-2xl border-white/20 p-6"
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,oklch(0.68_0.22_285/.16)_0%,transparent_32%),radial-gradient(circle_at_80%_75%,oklch(0.66_0.2_244/.15)_0%,transparent_34%)]" />
+      <section className="glass-panel relative overflow-hidden rounded-2xl p-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,oklch(0.82_0.13_82/.14)_0%,transparent_32%),radial-gradient(circle_at_80%_75%,oklch(0.49_0.08_150/.12)_0%,transparent_34%)]" />
         <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Relationship Intelligence</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Relationship Map</p>
             <h2 className="mt-1 font-serif text-4xl text-white md:text-5xl">
-              Interactive Character Constellation
+              Interactive character constellation
             </h2>
             <p className="mt-3 max-w-3xl text-sm text-muted-foreground md:text-base">
-              A cinematic detective board meets a neural fantasy map. Drag nodes, connect arcs, and
-              reveal emotional gravity in real time.
+              A hand-inked detective board meets a fantasy map. Drag nodes, connect arcs, and reveal
+              emotional gravity in real time.
             </p>
           </div>
-          <Badge glow>{nodes.length} nodes · {edges.length} live bonds</Badge>
+          <Badge glow>
+            {nodes.length} nodes / {edges.length} live bonds
+          </Badge>
         </div>
-      </motion.section>
+      </section>
+
+      {error ? (
+        <Card className="border-rose-300/25 bg-rose-500/10">
+          <CardContent className="p-4 text-sm text-rose-100">{error}</CardContent>
+        </Card>
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[320px_1fr]">
-        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
-          <Card className="glass-panel border-white/20">
-            <CardHeader>
-              <CardTitle className="font-serif text-2xl text-white">Create Dynamic Bond</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <label className="block">
-                <span className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Source Character
-                </span>
-                <select
-                  value={sourceId}
-                  onChange={(event) => setSourceId(event.target.value)}
-                  className={selectClass}
-                >
-                  {nodes.map((node) => (
-                    <option key={`source-${node.id}`} value={node.id}>
-                      {node.data.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Target Character
-                </span>
-                <select
-                  value={targetId}
-                  onChange={(event) => setTargetId(event.target.value)}
-                  className={selectClass}
-                >
-                  {nodes.map((node) => (
-                    <option key={`target-${node.id}`} value={node.id}>
-                      {node.data.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-                  Relationship Type
-                </span>
-                <select
-                  value={activeKind}
-                  onChange={(event) => setActiveKind(event.target.value as RelationshipKind)}
-                  className={selectClass}
-                >
-                  {relationshipKinds.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {relationshipStyles[kind].label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <Button
-                type="button"
-                size="lg"
-                className="w-full gap-2"
-                onClick={() => {
-                  const wasCreated = appendRelationship(sourceId, targetId, activeKind);
-                  if (!wasCreated) {
-                    return;
-                  }
-
-                  analytics.track(AnalyticsEvent.RELATIONSHIP_CREATED, {
-                    source_character_id: sourceId,
-                    target_character_id: targetId,
-                    relationship_type: activeKind,
-                  });
-                  markOnboardingStepCompleted("relationship_created");
-                }}
-              >
-                <PlusCircle className="h-4 w-4" />
-                Add Relationship
-              </Button>
-
-              <div className="rounded-xl border border-white/15 bg-black/25 p-3">
-                <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-white/70">
-                  <Network className="h-3.5 w-3.5" />
-                  Emotional Connection Colors
-                </p>
-                <div className="space-y-2">
-                  {relationshipKinds.map((kind) => (
-                    <div key={kind} className="flex items-center justify-between gap-3 text-xs">
-                      <span className="text-white/90">{relationshipStyles[kind].label}</span>
-                      <span
-                        className="inline-block h-2.5 w-16 rounded-full"
-                        style={{
-                          background: `linear-gradient(90deg, ${relationshipStyles[kind].stroke}, ${relationshipStyles[kind].glow})`,
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
+        <Card className="glass-panel border-amber-200/18">
+          <CardHeader>
+            <CardTitle className="font-serif text-2xl text-white">Create a new bond</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!hasCharacters ? (
+              <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-4 text-sm text-muted-foreground">
+                {isLoading
+                  ? "Reading characters from Supabase..."
+                  : "Create characters first to reveal relationship lines."}
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Source Character
+                  </span>
+                  <select
+                    value={resolvedSourceId}
+                    onChange={(event) => setSourceId(event.target.value)}
+                    className={selectClass}
+                  >
+                    {nodes.map((node) => (
+                      <option key={`source-${node.id}`} value={node.id}>
+                        {node.data.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-        <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}>
-          <div className="glass-panel relative h-[72vh] min-h-[520px] overflow-hidden rounded-2xl border-white/20">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,oklch(0.72_0.22_285/.16)_0%,transparent_34%),radial-gradient(circle_at_82%_70%,oklch(0.68_0.19_242/.16)_0%,transparent_36%)]" />
-            <div className="pointer-events-none absolute inset-0 cinematic-grid opacity-40" />
+                <label className="block">
+                  <span className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Target Character
+                  </span>
+                  <select
+                    value={resolvedTargetId}
+                    onChange={(event) => setTargetId(event.target.value)}
+                    className={selectClass}
+                  >
+                    {nodes.map((node) => (
+                      <option key={`target-${node.id}`} value={node.id}>
+                        {node.data.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
+                <label className="block">
+                  <span className="mb-2 block text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                    Relationship Type
+                  </span>
+                  <select
+                    value={activeKind}
+                    onChange={(event) => setActiveKind(event.target.value as RelationshipKind)}
+                    className={selectClass}
+                  >
+                    {relationshipKinds.map((kind) => (
+                      <option key={kind} value={kind}>
+                        {relationshipStyles[kind].label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full gap-2"
+                  onClick={() => {
+                    createBond(resolvedSourceId, resolvedTargetId, activeKind);
+                  }}
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Add Relationship
+                </Button>
+              </>
+            )}
+
+            <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-3">
+              <p className="mb-2 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-white/70">
+                <Network className="h-3.5 w-3.5" />
+                Emotional Connection Colors
+              </p>
+              <div className="space-y-2">
+                {relationshipKinds.map((kind) => (
+                  <div key={kind} className="flex items-center justify-between gap-3 text-xs">
+                    <span className="text-white/90">{relationshipStyles[kind].label}</span>
+                    <span
+                      className="inline-block h-2.5 w-16 rounded-full"
+                      style={{
+                        background: `linear-gradient(90deg, ${relationshipStyles[kind].stroke}, ${relationshipStyles[kind].glow})`,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="glass-panel relative h-[72vh] min-h-[520px] overflow-hidden rounded-2xl border-amber-200/18">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,oklch(0.82_0.13_82/.16)_0%,transparent_34%),radial-gradient(circle_at_82%_70%,oklch(0.49_0.08_150/.14)_0%,transparent_36%)]" />
+          <div className="pointer-events-none absolute inset-0 cinematic-grid opacity-40" />
+
+          {hasCharacters ? (
             <ReactFlowProvider>
               <ReactFlow
                 nodes={nodes}
@@ -343,17 +417,25 @@ export function RelationshipGraphView() {
                 <MiniMap
                   pannable
                   zoomable
-                  nodeStrokeColor="oklch(0.69 0.2 276 / 0.55)"
-                  nodeColor="oklch(0.25 0.03 264 / 0.95)"
-                  maskColor="oklch(0.1 0.01 260 / 0.72)"
-                  className="!border !border-white/20 !bg-black/35"
+                  nodeStrokeColor="oklch(0.74 0.13 82 / 0.55)"
+                  nodeColor="oklch(0.2 0.03 78 / 0.95)"
+                  maskColor="oklch(0.1 0.03 78 / 0.72)"
+                  className="!border !border-amber-200/20 !bg-[rgba(31,18,9,0.82)]"
                 />
-                <Controls className="[&>button]:!border-white/20 [&>button]:!bg-black/40 [&>button]:!text-white" />
-                <Background gap={26} color="oklch(0.52 0.06 260 / 0.3)" />
+                <Controls className="[&>button]:!border-amber-200/20 [&>button]:!bg-[rgba(31,18,9,0.7)] [&>button]:!text-white" />
+                <Background gap={26} color="oklch(0.56 0.05 78 / 0.3)" />
               </ReactFlow>
             </ReactFlowProvider>
-          </div>
-        </motion.div>
+          ) : (
+            <div className="relative flex h-full items-center justify-center p-8 text-center">
+              <div className="max-w-md rounded-2xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.18))] p-6 text-sm text-muted-foreground">
+                {isLoading
+                  ? "We are loading your character archive so the relationship map can connect real user data."
+                  : "Once you create characters, their bonds will appear here as an interactive constellation."}
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -366,4 +448,4 @@ export function RelationshipGraphView() {
 }
 
 const selectClass =
-  "w-full rounded-xl border border-white/15 bg-black/25 px-3 py-2.5 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/30";
+  "w-full rounded-xl border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.18))] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-white/45 focus:border-primary/60 focus:ring-2 focus:ring-primary/20";

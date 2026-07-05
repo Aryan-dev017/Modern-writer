@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -14,18 +13,15 @@ type ActCardProps = {
 
 export function ActCard({ act, isActive, onClick }: ActCardProps) {
   return (
-    <motion.button
+    <button
       type="button"
-      whileHover={{ y: -4, scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      transition={{ duration: 0.2 }}
       onClick={onClick}
       className="w-full text-left"
     >
       <Card
         className={cn(
           "transition duration-300 hover:border-primary/50",
-          isActive && "border-primary/55 shadow-[0_0_28px_oklch(0.67_0.22_285/.28)]",
+          isActive && "border-primary/55 shadow-[0_0_28px_rgba(245,201,109,0.2)]",
         )}
       >
         <CardHeader>
@@ -43,17 +39,15 @@ export function ActCard({ act, isActive, onClick }: ActCardProps) {
               <span>Completion</span>
               <span>{act.completion}%</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
-              <motion.div
+            <div className="h-2 overflow-hidden rounded-full bg-amber-950/20">
+              <div
                 className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
-                initial={{ width: 0 }}
-                animate={{ width: `${act.completion}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
+                style={{ width: `${act.completion}%` }}
               />
             </div>
           </div>
         </CardContent>
       </Card>
-    </motion.button>
+    </button>
   );
 }

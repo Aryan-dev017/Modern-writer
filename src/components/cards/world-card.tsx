@@ -16,7 +16,7 @@ export function WorldCard({ name, realm, description }: WorldCardProps) {
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="pt-0 text-sm text-muted-foreground">
-        From forgotten sky-cities to abyssal halls, every location carries a narrative pulse.
+        From candlelit study halls to misted forest shrines, every location carries a narrative pulse.
       </CardContent>
     </Card>
   );

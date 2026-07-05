@@ -9,8 +9,8 @@ export function Badge({ className, glow = false, ...props }: BadgeProps) {
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full border border-border/80 bg-white/5 px-3 py-1 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground",
-        glow && "text-primary shadow-[0_0_22px_oklch(0.62_0.22_285/.32)]",
+        "inline-flex items-center rounded-full border border-amber-200/20 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(110,74,34,0.16))] px-3 py-1 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground",
+        glow && "text-amber-100 shadow-[0_0_18px_rgba(243,196,109,0.2)]",
         className,
       )}
       {...props}

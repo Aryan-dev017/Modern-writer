@@ -15,10 +15,15 @@ type AppProvidersProps = {
   children: ReactNode;
 };
 
+function AuthRuntime() {
+  useAuthAnalytics();
+
+  return null;
+}
+
 function AnalyticsRuntime() {
   usePageTracking();
   useRetentionTracking();
-  useAuthAnalytics();
 
   return null;
 }
@@ -28,14 +33,17 @@ export function AppProviders({ children }: AppProvidersProps) {
     initPostHog();
   }, []);
 
-  if (!isPostHogEnabled()) {
-    return <>{children}</>;
-  }
-
   return (
-    <PostHogProvider client={posthog}>
-      <AnalyticsRuntime />
-      {children}
-    </PostHogProvider>
+    <>
+      <AuthRuntime />
+      {isPostHogEnabled() ? (
+        <PostHogProvider client={posthog}>
+          <AnalyticsRuntime />
+          {children}
+        </PostHogProvider>
+      ) : (
+        children
+      )}
+    </>
   );
 }

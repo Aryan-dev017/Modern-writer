@@ -4,7 +4,8 @@ export type RelationshipKind =
   | "lover"
   | "rival"
   | "mentor"
-  | "sibling";
+  | "sibling"
+  | "stranger";
 
 type RelationshipStyle = {
   label: string;
@@ -16,8 +17,8 @@ type RelationshipStyle = {
 export const relationshipStyles: Record<RelationshipKind, RelationshipStyle> = {
   friend: {
     label: "Friend",
-    stroke: "oklch(0.72 0.17 182 / 0.95)",
-    glow: "oklch(0.75 0.2 182 / 0.42)",
+    stroke: "oklch(0.68 0.1 150 / 0.95)",
+    glow: "oklch(0.72 0.12 150 / 0.42)",
     chip: "border-emerald-300/35 bg-emerald-400/12 text-emerald-100",
   },
   enemy: {
@@ -28,9 +29,9 @@ export const relationshipStyles: Record<RelationshipKind, RelationshipStyle> = {
   },
   lover: {
     label: "Lover",
-    stroke: "oklch(0.73 0.22 336 / 0.96)",
-    glow: "oklch(0.73 0.22 336 / 0.45)",
-    chip: "border-fuchsia-300/35 bg-fuchsia-400/12 text-fuchsia-100",
+    stroke: "oklch(0.65 0.12 32 / 0.96)",
+    glow: "oklch(0.7 0.13 32 / 0.45)",
+    chip: "border-amber-300/35 bg-amber-400/12 text-amber-100",
   },
   rival: {
     label: "Rival",
@@ -40,15 +41,21 @@ export const relationshipStyles: Record<RelationshipKind, RelationshipStyle> = {
   },
   mentor: {
     label: "Mentor",
-    stroke: "oklch(0.7 0.19 242 / 0.95)",
-    glow: "oklch(0.72 0.2 242 / 0.42)",
-    chip: "border-sky-300/35 bg-sky-400/12 text-sky-100",
+    stroke: "oklch(0.64 0.08 150 / 0.95)",
+    glow: "oklch(0.66 0.08 150 / 0.42)",
+    chip: "border-emerald-300/35 bg-emerald-400/12 text-emerald-100",
   },
   sibling: {
     label: "Sibling",
-    stroke: "oklch(0.73 0.15 154 / 0.95)",
-    glow: "oklch(0.73 0.15 154 / 0.4)",
-    chip: "border-teal-300/35 bg-teal-400/12 text-teal-100",
+    stroke: "oklch(0.68 0.08 92 / 0.95)",
+    glow: "oklch(0.68 0.08 92 / 0.4)",
+    chip: "border-stone-300/35 bg-stone-400/12 text-stone-100",
+  },
+  stranger: {
+    label: "Stranger",
+    stroke: "oklch(0.7 0.07 82 / 0.9)",
+    glow: "oklch(0.7 0.07 82 / 0.34)",
+    chip: "border-stone-300/35 bg-stone-400/12 text-stone-100",
   },
 };
 

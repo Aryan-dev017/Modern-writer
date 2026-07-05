@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: oklch(0.14 0.02 265);
-  --foreground: oklch(0.95 0.01 260);
-  --card: oklch(0.2 0.03 265);
-  --card-foreground: oklch(0.96 0.01 260);
-  --muted: oklch(0.3 0.04 265);
-  --muted-foreground: oklch(0.78 0.02 265);
-  --primary: oklch(0.67 0.22 285);
-  --secondary: oklch(0.57 0.15 245);
-  --border: oklch(0.34 0.05 265 / 55%);
-  --ring: oklch(0.72 0.2 285 / 80%);
-  --accent: oklch(0.74 0.17 243);
+  --background: oklch(0.16 0.03 75);
+  --foreground: oklch(0.97 0.02 92);
+  --card: oklch(0.24 0.04 74);
+  --card-foreground: oklch(0.98 0.02 92);
+  --muted: oklch(0.29 0.03 76);
+  --muted-foreground: oklch(0.8 0.03 92);
+  --primary: oklch(0.84 0.13 82);
+  --secondary: oklch(0.47 0.08 149);
+  --border: oklch(0.44 0.05 76 / 42%);
+  --ring: oklch(0.84 0.13 82 / 80%);
+  --accent: oklch(0.62 0.12 34);
+  --font-story-serif: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-story-sans: "Crimson Text", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
 @theme inline {
@@ -26,8 +28,8 @@
   --color-border: var(--border);
   --color-ring: var(--ring);
   --color-accent: var(--accent);
-  --font-sans: "Trebuchet MS", "Segoe UI", sans-serif;
-  --font-serif: "Palatino Linotype", "Book Antiqua", serif;
+  --font-sans: var(--font-story-sans);
+  --font-serif: var(--font-story-serif);
 }
 
 * {
@@ -42,44 +44,54 @@ body {
 body {
   background-color: var(--background);
   background-image:
-    radial-gradient(circle at 18% 16%, oklch(0.44 0.2 285 / 24%) 0%, transparent 38%),
-    radial-gradient(circle at 85% 12%, oklch(0.5 0.16 240 / 20%) 0%, transparent 40%),
-    radial-gradient(circle at 50% 100%, oklch(0.35 0.16 300 / 15%) 0%, transparent 50%);
+    radial-gradient(circle at 50% 18%, oklch(0.89 0.04 92 / 14%) 0%, transparent 34%),
+    radial-gradient(circle at 17% 18%, oklch(0.78 0.1 82 / 14%) 0%, transparent 30%),
+    radial-gradient(circle at 83% 17%, oklch(0.46 0.08 149 / 10%) 0%, transparent 32%),
+    linear-gradient(
+      90deg,
+      oklch(0.12 0.03 72 / 96%) 0%,
+      oklch(0.2 0.04 71 / 92%) 10%,
+      oklch(0.28 0.05 72 / 80%) 18%,
+      oklch(0.81 0.07 90 / 14%) 33%,
+      oklch(0.9 0.05 92 / 18%) 49%,
+      oklch(0.9 0.05 92 / 18%) 51%,
+      oklch(0.81 0.07 90 / 14%) 67%,
+      oklch(0.28 0.05 72 / 80%) 82%,
+      oklch(0.2 0.04 71 / 92%) 90%,
+      oklch(0.12 0.03 72 / 96%) 100%
+    );
   background-attachment: fixed;
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-story-sans);
   overflow-x: hidden;
 }
 
 ::selection {
-  background: oklch(0.78 0.19 285 / 30%);
+  background: oklch(0.82 0.11 82 / 34%);
   color: var(--foreground);
 }
 
 .glass-panel {
-  background: linear-gradient(
-    160deg,
-    oklch(0.26 0.04 265 / 62%) 0%,
-    oklch(0.18 0.03 262 / 70%) 100%
-  );
-  backdrop-filter: blur(16px);
-  border: 1px solid oklch(0.52 0.05 265 / 30%);
+  background:
+    radial-gradient(circle at top, oklch(0.92 0.04 92 / 12%) 0%, transparent 42%),
+    linear-gradient(180deg, oklch(0.92 0.05 92 / 12%) 0%, oklch(0.28 0.05 72 / 20%) 100%);
+  border: 1px solid oklch(0.72 0.08 82 / 26%);
   box-shadow:
-    0 24px 64px oklch(0.05 0.01 260 / 56%),
-    inset 0 1px 0 oklch(0.88 0.02 260 / 12%);
+    0 22px 54px oklch(0.06 0.02 72 / 54%),
+    inset 0 1px 0 oklch(0.98 0.02 92 / 18%);
 }
 
 .text-glow {
   text-shadow:
-    0 0 14px oklch(0.72 0.22 285 / 36%),
-    0 0 34px oklch(0.67 0.22 255 / 23%);
+    0 0 14px oklch(0.84 0.13 82 / 24%),
+    0 0 34px oklch(0.62 0.12 34 / 14%);
 }
 
 .cinematic-grid {
   background-image:
-    linear-gradient(to right, oklch(0.44 0.04 260 / 9%) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(0.44 0.04 260 / 9%) 1px, transparent 1px);
-  background-size: 72px 72px;
+    linear-gradient(to right, oklch(0.55 0.06 82 / 8%) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.55 0.06 82 / 8%) 1px, transparent 1px);
+  background-size: 68px 68px;
 }
 
 @keyframes relationship-edge-flow {

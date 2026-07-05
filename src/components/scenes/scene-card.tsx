@@ -1,7 +1,6 @@
 "use client";
 
 import { MapPin, Pencil, Trash2, Users } from "lucide-react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -26,12 +25,12 @@ export function SceneCard({
   onDelete,
 }: SceneCardProps) {
   return (
-    <motion.div whileHover={{ y: -3 }} className="relative">
-      <Card className="glass-panel border-white/20">
+    <div className="relative">
+      <Card className="glass-panel border-amber-200/18">
         <CardContent className="space-y-4 p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
-              <div className="rounded-lg border border-white/20 bg-black/35 px-2 py-1 text-xs text-white/85">
+              <div className="rounded-lg border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.2))] px-2 py-1 text-xs text-white/85">
                 #{timelineNumber}
               </div>
               <div className="min-w-0">
@@ -51,10 +50,10 @@ export function SceneCard({
           </div>
 
           <div className="grid gap-2 text-xs text-white/80 sm:grid-cols-[1fr_auto]">
-            <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+            <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] px-3 py-2">
               <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/65">
                 <Users className="h-3.5 w-3.5" />
-                Involved Characters
+                Cast
               </p>
               <p className="mt-1 truncate">
                 {assignedCharacters.length === 0
@@ -63,17 +62,17 @@ export function SceneCard({
               </p>
             </div>
 
-            <div className="rounded-xl border border-white/15 bg-black/25 px-3 py-2">
+            <div className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] px-3 py-2">
               <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/65">
                 <MapPin className="h-3.5 w-3.5" />
-                Location
+                Setting
               </p>
               <p className="mt-1 truncate">{scene.location}</p>
             </div>
           </div>
 
           {scene.notes ? (
-            <p className="rounded-xl border border-white/15 bg-black/25 p-3 text-sm text-muted-foreground">
+            <p className="rounded-xl border border-amber-200/12 bg-[linear-gradient(180deg,rgba(255,248,232,0.06),rgba(82,55,26,0.16))] p-3 text-sm text-muted-foreground">
               {scene.notes}
             </p>
           ) : null}
@@ -90,6 +89,6 @@ export function SceneCard({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }

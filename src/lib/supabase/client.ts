@@ -12,7 +12,7 @@ export function createClient() {
   }
 
   const env = getSupabaseConfig();
-  browserClient = createBrowserClient(env.url, env.publishableKey);
+  browserClient = createBrowserClient(env.url, env.anonKey);
   return browserClient;
 }
 

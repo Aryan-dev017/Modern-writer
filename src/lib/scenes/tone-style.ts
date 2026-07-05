@@ -1,10 +1,10 @@
 import type { EmotionalTone } from "@/store/character-store";
 
 export const sceneToneStyles: Record<EmotionalTone, string> = {
-  hopeful: "border-sky-300/35 bg-sky-400/12 text-sky-100",
-  melancholic: "border-indigo-300/35 bg-indigo-400/12 text-indigo-100",
+  hopeful: "border-amber-300/35 bg-amber-400/12 text-amber-100",
+  melancholic: "border-stone-300/35 bg-stone-400/12 text-stone-100",
   vengeful: "border-rose-300/35 bg-rose-400/12 text-rose-100",
-  haunted: "border-violet-300/35 bg-violet-400/12 text-violet-100",
-  radiant: "border-cyan-300/35 bg-cyan-400/12 text-cyan-100",
-  enigmatic: "border-fuchsia-300/35 bg-fuchsia-400/12 text-fuchsia-100",
+  haunted: "border-emerald-300/25 bg-emerald-400/10 text-emerald-100",
+  radiant: "border-amber-300/45 bg-amber-400/14 text-amber-100",
+  enigmatic: "border-amber-300/35 bg-amber-400/12 text-amber-100",
 };

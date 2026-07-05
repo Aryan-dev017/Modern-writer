@@ -1,10 +1,20 @@
 "use client";
 
 import { create } from "zustand";
+import {
+  createScene as createSceneRecord,
+  deleteScene as deleteSceneRecord,
+  listScenes,
+  updateScene as updateSceneRecord,
+} from "@/features/scenes/repository";
+import { useProjectStore } from "@/store/project-store";
 import type { EmotionalTone } from "@/store/character-store";
+import type { SceneInsert, SceneRow, SceneUpdate } from "@/types/database";
 
 export type UniverseScene = {
   id: string;
+  projectId?: string;
+  userId?: string;
   title: string;
   summary: string;
   emotionalTone: EmotionalTone;
@@ -20,6 +30,9 @@ export type SceneDraft = Omit<UniverseScene, "id" | "timelineOrder" | "createdAt
 
 type SceneStore = {
   scenes: UniverseScene[];
+  isLoading: boolean;
+  error: string | null;
+  hydrateScenes: (projectId?: string) => Promise<void>;
   createScene: (draft: SceneDraft) => UniverseScene | null;
   updateScene: (id: string, draft: SceneDraft) => void;
   deleteScene: (id: string) => void;
@@ -30,138 +43,272 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function sceneIdFromTitle(title: string) {
+function createSceneId(title: string) {
   const normalized = title
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return `${normalized || "scene"}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const uuid = globalThis.crypto?.randomUUID?.();
+  const suffix = uuid ? uuid.slice(0, 6) : Math.random().toString(36).slice(2, 8);
+  return `${normalized || "scene"}-${suffix}`;
 }
 
-function sortByTimelineOrder(a: UniverseScene, b: UniverseScene) {
-  return a.timelineOrder - b.timelineOrder;
+function getActiveProjectId() {
+  const { activeProjectId, projects } = useProjectStore.getState();
+  return activeProjectId ?? projects[0]?.id ?? null;
+}
+
+function formatRow(row: SceneRow): UniverseScene {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    userId: row.user_id,
+    title: row.title,
+    summary: row.summary,
+    emotionalTone: row.emotional_tone,
+    involvedCharacterIds: row.involved_character_ids ?? [],
+    location: row.location,
+    notes: row.notes,
+    timelineOrder: row.order_index,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function buildInsertPayload(
+  draft: SceneDraft,
+  projectId: string,
+  id: string,
+  orderIndex: number,
+): Omit<SceneInsert, "user_id"> {
+  return {
+    id,
+    project_id: projectId,
+    title: draft.title.trim(),
+    summary: draft.summary.trim(),
+    emotional_tone: draft.emotionalTone,
+    location: draft.location.trim(),
+    order_index: orderIndex,
+    involved_character_ids: [...new Set(draft.involvedCharacterIds)],
+    notes: draft.notes.trim(),
+  };
+}
+
+function buildUpdatePayload(draft: SceneDraft): SceneUpdate {
+  return {
+    title: draft.title.trim(),
+    summary: draft.summary.trim(),
+    emotional_tone: draft.emotionalTone,
+    location: draft.location.trim(),
+    involved_character_ids: [...new Set(draft.involvedCharacterIds)],
+    notes: draft.notes.trim(),
+  };
 }
 
 function applyTimelineOrder(scenes: UniverseScene[]) {
   return [...scenes]
-    .sort(sortByTimelineOrder)
+    .sort((a, b) => a.timelineOrder - b.timelineOrder)
     .map((scene, index) => ({
       ...scene,
       timelineOrder: index + 1,
+      updatedAt: nowIso(),
     }));
 }
 
-const seedScenes: UniverseScene[] = [
-  {
-    id: "scene-ember-arrival",
-    title: "Ember Gate Arrival",
-    summary:
-      "Kael enters Umbra Crown under false credentials as the sky-city trembles under eclipse alarms.",
-    emotionalTone: "haunted",
-    involvedCharacterIds: ["kael-ashborne"],
-    location: "Umbra Crown - Ember Gate",
-    notes: "Start with distant bells and low strings. Keep camera language wide and lonely.",
-    timelineOrder: 1,
-    createdAt: "2026-05-29T00:00:00.000Z",
-    updatedAt: "2026-05-29T00:00:00.000Z",
-  },
-  {
-    id: "scene-violet-oath",
-    title: "Oath in the Violet Deep",
-    summary:
-      "Seris receives a fractured prophecy revealing the cost of unifying the twin sigils.",
-    emotionalTone: "radiant",
-    involvedCharacterIds: ["seris-vale", "kael-ashborne"],
-    location: "Violet Deep - Oracle Vault",
-    notes: "Use mirrored reflections as visual foreshadowing for betrayal.",
-    timelineOrder: 2,
-    createdAt: "2026-05-29T00:00:00.000Z",
-    updatedAt: "2026-05-29T00:00:00.000Z",
-  },
-  {
-    id: "scene-bridge-betrayal",
-    title: "Betrayal at Hollow Bridge",
-    summary:
-      "Regent forces close in while Kael and Seris face a choice between loyalty and survival.",
-    emotionalTone: "vengeful",
-    involvedCharacterIds: ["kael-ashborne", "seris-vale"],
-    location: "Hollow Bridge",
-    notes: "Build pace with intercut closeups and sparse dialogue before the confrontation.",
-    timelineOrder: 3,
-    createdAt: "2026-05-29T00:00:00.000Z",
-    updatedAt: "2026-05-29T00:00:00.000Z",
-  },
-];
+export const useSceneStore = create<SceneStore>((set, get) => ({
+  scenes: [],
+  isLoading: true,
+  error: null,
+  hydrateScenes: async (projectId) => {
+    const targetProjectId = projectId ?? getActiveProjectId();
 
-export const useSceneStore = create<SceneStore>((set) => ({
-  scenes: seedScenes,
+    if (!targetProjectId) {
+      set({ scenes: [], isLoading: false, error: null });
+      return;
+    }
+
+    set({ isLoading: true, error: null });
+    const { data, error } = await listScenes(targetProjectId);
+
+    if (error) {
+      set({ isLoading: false, error });
+      return;
+    }
+
+    const scenes = (data ?? []).map(formatRow);
+    set({ scenes, isLoading: false, error: null });
+  },
   createScene: (draft) => {
-    let createdScene: UniverseScene | null = null;
+    const projectId = getActiveProjectId();
+    if (!projectId) {
+      set({ error: "Create a universe before adding scenes." });
+      return null;
+    }
 
-    set((state) => {
-      const sortedScenes = [...state.scenes].sort(sortByTimelineOrder);
-      const timestamp = nowIso();
-      const nextScene: UniverseScene = {
-        ...draft,
-        id: sceneIdFromTitle(draft.title),
-        timelineOrder: sortedScenes.length + 1,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      };
+    const now = nowIso();
+    const id = createSceneId(draft.title);
+    const previousScenes = get().scenes;
+    const nextScene: UniverseScene = {
+      ...draft,
+      id,
+      projectId,
+      userId: undefined,
+      timelineOrder: [...previousScenes].sort((a, b) => a.timelineOrder - b.timelineOrder).length + 1,
+      createdAt: now,
+      updatedAt: now,
+    };
 
-      createdScene = nextScene;
-
-      return {
-        scenes: [...sortedScenes, nextScene],
-      };
-    });
-
-    return createdScene;
-  },
-  updateScene: (id, draft) =>
     set((state) => ({
-      scenes: state.scenes.map((scene) =>
-        scene.id === id
-          ? {
-              ...scene,
-              ...draft,
-              updatedAt: nowIso(),
-            }
-          : scene,
-      ),
-    })),
-  deleteScene: (id) =>
+      scenes: [...applyTimelineOrder([...state.scenes, nextScene])],
+      error: null,
+    }));
+
+    void createSceneRecord(buildInsertPayload(draft, projectId, id, nextScene.timelineOrder))
+      .then(({ data, error }) => {
+        if (error || !data) {
+          set({ scenes: previousScenes, error: error ?? "Failed to create scene." });
+          return;
+        }
+
+        set((state) => ({
+          scenes: state.scenes.map((scene) => (scene.id === id ? formatRow(data) : scene)),
+        }));
+      })
+      .catch((error: unknown) => {
+        set({
+          scenes: previousScenes,
+          error: error instanceof Error ? error.message : "Failed to create scene.",
+        });
+      });
+
+    return nextScene;
+  },
+  updateScene: (id, draft) => {
+    const currentScene = get().scenes.find((scene) => scene.id === id);
+    if (!currentScene) {
+      return;
+    }
+
+    const previousScenes = get().scenes;
+    const updatedScene: UniverseScene = {
+      ...currentScene,
+      ...draft,
+      title: draft.title.trim(),
+      summary: draft.summary.trim(),
+      location: draft.location.trim(),
+      notes: draft.notes.trim(),
+      involvedCharacterIds: [...new Set(draft.involvedCharacterIds)],
+      updatedAt: nowIso(),
+    };
+
+    set((state) => ({
+      scenes: state.scenes.map((scene) => (scene.id === id ? updatedScene : scene)),
+      error: null,
+    }));
+
+    if (currentScene.projectId) {
+      void updateSceneRecord(id, buildUpdatePayload(draft))
+        .then(({ data, error }) => {
+          if (error || !data) {
+            set({ scenes: previousScenes, error: error ?? "Failed to update scene." });
+            return;
+          }
+
+          set((state) => ({
+            scenes: state.scenes.map((scene) => (scene.id === id ? formatRow(data) : scene)),
+          }));
+        })
+        .catch((error: unknown) => {
+          set({
+            scenes: previousScenes,
+            error: error instanceof Error ? error.message : "Failed to update scene.",
+          });
+        });
+    }
+  },
+  deleteScene: (id) => {
+    const currentScene = get().scenes.find((scene) => scene.id === id);
+    if (!currentScene) {
+      return;
+    }
+
+    const previousScenes = get().scenes;
+    const projectId = currentScene.projectId;
+
     set((state) => ({
       scenes: applyTimelineOrder(state.scenes.filter((scene) => scene.id !== id)),
-    })),
-  reorderScenes: (orderedIds) =>
-    set((state) => {
-      const mapById = new Map(state.scenes.map((scene) => [scene.id, scene]));
-      const knownIds = new Set(state.scenes.map((scene) => scene.id));
+      error: null,
+    }));
 
-      const reordered = orderedIds
-        .filter((id) => knownIds.has(id))
-        .map((id, index) => {
-          const scene = mapById.get(id);
-          if (!scene) {
-            return null;
+    if (projectId) {
+      void deleteSceneRecord(id)
+        .then(({ error }) => {
+          if (error) {
+            set({ scenes: previousScenes, error });
           }
-          return {
-            ...scene,
-            timelineOrder: index + 1,
-            updatedAt: nowIso(),
-          } satisfies UniverseScene;
         })
-        .filter((scene): scene is UniverseScene => scene !== null);
+        .catch((error: unknown) => {
+          set({
+            scenes: previousScenes,
+            error: error instanceof Error ? error.message : "Failed to delete scene.",
+          });
+        });
+    }
+  },
+  reorderScenes: (orderedIds) => {
+    const currentScenes = get().scenes;
+    const previousScenes = currentScenes;
+    const byId = new Map(currentScenes.map((scene) => [scene.id, scene] as const));
+    const orderedSet = new Set(orderedIds);
 
-      if (reordered.length !== state.scenes.length) {
-        const remaining = state.scenes.filter((scene) => !orderedIds.includes(scene.id));
-        return {
-          scenes: applyTimelineOrder([...reordered, ...remaining]),
-        };
-      }
+    const reordered = orderedIds
+      .map((id) => byId.get(id))
+      .filter((scene): scene is UniverseScene => Boolean(scene))
+      .map((scene, index) => ({
+        ...scene,
+        timelineOrder: index + 1,
+        updatedAt: nowIso(),
+      }));
 
-      return { scenes: reordered };
-    }),
+    const remaining = currentScenes
+      .filter((scene) => !orderedSet.has(scene.id))
+      .sort((a, b) => a.timelineOrder - b.timelineOrder)
+      .map((scene) => ({
+        ...scene,
+        updatedAt: nowIso(),
+      }));
+
+    const nextScenes = applyTimelineOrder([...reordered, ...remaining]);
+    set({ scenes: nextScenes, error: null });
+
+    const projectId = currentScenes[0]?.projectId ?? getActiveProjectId();
+    if (projectId) {
+      void (async () => {
+        try {
+          const tempOffset = nextScenes.length + 1000;
+          await Promise.all(
+            nextScenes.map((scene) =>
+              updateSceneRecord(scene.id, {
+                order_index: scene.timelineOrder + tempOffset,
+              }),
+            ),
+          );
+          await Promise.all(
+            nextScenes.map((scene) =>
+              updateSceneRecord(scene.id, {
+                order_index: scene.timelineOrder,
+              }),
+            ),
+          );
+        } catch (error) {
+          set({
+            scenes: previousScenes,
+            error: error instanceof Error ? error.message : "Failed to reorder scenes.",
+          });
+        }
+      })();
+    }
+  },
 }));

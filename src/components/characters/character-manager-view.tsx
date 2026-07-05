@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { Filter, LibraryBig, Search } from "lucide-react";
 import { AnalyticsEvent } from "@/lib/analytics/events";
 import { useAnalytics } from "@/lib/analytics/hooks";
@@ -17,6 +16,8 @@ import { useCharacterStore } from "@/store/character-store";
 export function CharacterManagerView() {
   const analytics = useAnalytics();
   const characters = useCharacterStore((state) => state.characters);
+  const isLoading = useCharacterStore((state) => state.isLoading);
+  const error = useCharacterStore((state) => state.error);
   const createCharacter = useCharacterStore((state) => state.createCharacter);
   const [query, setQuery] = useState("");
   const [toneFilter, setToneFilter] = useState<"all" | EmotionalTone>("all");
@@ -35,27 +36,34 @@ export function CharacterManagerView() {
     });
   }, [characters, query, toneFilter]);
 
+  const isInitialLoading = isLoading && characters.length === 0;
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-panel rounded-2xl p-6"
-      >
+      <section className="glass-panel rounded-2xl p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Character Vault</p>
-            <h2 className="mt-1 font-serif text-3xl text-white">Collectible Character Codex</h2>
+            <h2 className="mt-1 font-serif text-3xl text-white">Collectible character codex</h2>
           </div>
-          <Badge glow>{characters.length} registered presences</Badge>
+          <Badge glow>{characters.length} archived presences</Badge>
         </div>
-      </motion.section>
+      </section>
+
+      {error ? (
+        <Card className="border-rose-300/25 bg-rose-500/10">
+          <CardContent className="p-4 text-sm text-rose-100">{error}</CardContent>
+        </Card>
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.05fr_1.35fr]">
         <CharacterForm
           mode="create"
           onSubmit={(draft) => {
             const characterId = createCharacter(draft);
+            if (!characterId) {
+              return;
+            }
             analytics.track(AnalyticsEvent.CHARACTER_CREATED, {
               character_id: characterId,
               emotional_tone: draft.emotionalTone,
@@ -80,7 +88,7 @@ export function CharacterManagerView() {
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Search names, titles, tags"
-                    className="w-full rounded-xl border border-white/15 bg-black/25 py-2.5 pl-9 pr-3 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+                    className="w-full rounded-xl border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.18))] py-2.5 pl-9 pr-3 text-sm text-white outline-none transition placeholder:text-white/45 focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                   />
                 </label>
                 <label className="relative block">
@@ -88,7 +96,7 @@ export function CharacterManagerView() {
                   <select
                     value={toneFilter}
                     onChange={(event) => setToneFilter(event.target.value as "all" | EmotionalTone)}
-                    className="w-full rounded-xl border border-white/15 bg-black/25 py-2.5 pl-9 pr-8 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+                    className="w-full rounded-xl border border-amber-200/15 bg-[linear-gradient(180deg,rgba(255,248,232,0.08),rgba(82,55,26,0.18))] py-2.5 pl-9 pr-8 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="all">All moods</option>
                     {(Object.keys(moodPalette) as EmotionalTone[]).map((tone) => (
@@ -102,7 +110,13 @@ export function CharacterManagerView() {
             </CardContent>
           </Card>
 
-          {filteredCharacters.length === 0 ? (
+          {isInitialLoading ? (
+            <Card className="glass-panel">
+              <CardContent className="p-8 text-center text-sm text-muted-foreground">
+                Reading character records from Supabase...
+              </CardContent>
+            </Card>
+          ) : filteredCharacters.length === 0 ? (
             <Card className="glass-panel">
               <CardContent className="p-8 text-center text-sm text-muted-foreground">
                 No characters match this filter. Shift your emotional tone or search query.

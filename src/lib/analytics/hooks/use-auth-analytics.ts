@@ -11,6 +11,7 @@ import {
 import { AnalyticsEvent } from "@/lib/analytics/events";
 import { markOnboardingStepCompleted } from "@/lib/analytics/onboarding";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+import { useAuthStore } from "@/store/auth-store";
 
 function getUserTraits(user: User) {
   const provider = user.app_metadata?.provider;
@@ -41,21 +42,33 @@ export function useAuthAnalytics() {
 
     let cancelled = false;
 
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       if (cancelled) {
         return;
       }
 
-      identifyFromUser(data.user);
+      const session = data.session ?? null;
+      useAuthStore.getState().setAuthState({
+        user: session?.user ?? null,
+        session,
+      });
+      useAuthStore.getState().setIsLoading(false);
+      identifyFromUser(session?.user ?? null);
     });
 
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
         resetAnalyticsUser();
+        useAuthStore.getState().reset();
         return;
       }
 
       const user = session?.user ?? null;
+      useAuthStore.getState().setAuthState({
+        user,
+        session: session ?? null,
+      });
+      useAuthStore.getState().setIsLoading(false);
       identifyFromUser(user);
 
       if (event !== "SIGNED_IN" || !user) {
